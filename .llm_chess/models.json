@@ -1,0 +1,102 @@
+{
+  "models": [
+    {
+      "model": "google/gemini-2.5-flash",
+      "temperature": 0.4,
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "google/gemini-3-flash-preview-low",
+      "temperature": 0.4,
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "google/gemini-3-flash-preview-medium",
+      "temperature": 0.4,
+      "reasoning_effort": "medium"
+    },
+    {
+      "model": "google/gemini-3-flash-preview-high",
+      "temperature": 0.4,
+      "reasoning_effort": "high"
+    },
+    {
+      "model": "xiaomi/mimo-v2-flash:free",
+      "temperature": 0.4,
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "anthropic/claude-haiku-4.5",
+      "temperature": 0.4,
+      "reasoning_max_tokens": 1536
+    },
+    {
+      "model": "google/gemini-2.0-flash-001",
+      "temperature": 0.4
+    },
+    {
+      "model": "openai/gpt-5-mini",
+      "temperature": 0.4,
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "openai/gpt-5.2-low",
+      "temperature": 0.4,
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "openai/gpt-5.2-medium",
+      "temperature": 0.4,
+      "reasoning_effort": "medium"
+    },
+    {
+      "model": "openai/gpt-5.2-high",
+      "temperature": 0.4,
+      "reasoning_effort": "high"
+    },
+    {
+      "model": "openai/gpt-5-nano",
+      "temperature": 0.4,
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "x-ai/grok-4.1-fast",
+      "temperature": 0.4,
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "anthropic/claude-sonnet-4.5",
+      "temperature": 0.4,
+      "reasoning_max_tokens": 1024
+    },
+    {
+      "model": "deepseek/deepseek-v3.2",
+      "temperature": 0.4,
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "google/gemini-3-pro-preview-low",
+      "temperature": 0.4,
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "google/gemini-3-pro-preview-medium",
+      "temperature": 0.4,
+      "reasoning_effort": "medium"
+    },
+    {
+      "model": "google/gemini-3-pro-preview-high",
+      "temperature": 0.4,
+      "reasoning_effort": "high"
+    },
+    {
+      "temperature": 0.4,
+      "reasoning_effort": "low"
+    },
+    {
+      "model": "anthropic/claude-opus-4.5",
+      "temperature": 0.4,
+      "reasoning_max_tokens": 1024
+    }
+  ]
+}

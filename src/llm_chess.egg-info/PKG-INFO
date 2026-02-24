@@ -1,0 +1,73 @@
+Metadata-Version: 2.4
+Name: llm-chess
+Version: 0.1.0
+Summary: LLM vs LLM chess match runner using OpenRouter
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: python-chess>=1.999
+Requires-Dist: openai>=1.40.0
+
+# LLM Chess Arena
+
+Run two LLMs against each other in chess using OpenRouter and python-chess, with a simple CLI spectator view.
+
+## Setup
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+Set your OpenRouter API key:
+
+```bash
+export OPENROUTER_API_KEY="your_key"
+```
+
+Optional headers for OpenRouter analytics:
+
+```bash
+export OPENROUTER_APP_URL="https://your-app.example"
+export OPENROUTER_APP_TITLE="LLM Chess Arena"
+```
+
+## Run a Match
+
+```bash
+llm-chess \
+  --model-a openai/gpt-4o-mini \
+  --model-b anthropic/claude-3.5-sonnet \
+  --temperature-a 0.2 \
+  --temperature-b 0.2 \
+  --delay 0.4
+```
+
+Headless series (no rendering, no delays):
+
+```bash
+llm-chess --headless --games 10
+```
+
+Without installing, you can run:
+
+```bash
+PYTHONPATH=src python -m llm_chess --model-a openai/gpt-4o-mini --model-b anthropic/claude-3.5-sonnet
+```
+
+## CLI Options
+
+- `--model-a`, `--model-b`: OpenRouter model IDs
+- `--temperature-a`, `--temperature-b`: Sampling temperature per model
+- `--max-plies`: Stop after N plies
+- `--delay`: Delay between moves
+- `--headless`: Run X games without rendering and only report scores
+- `--games`: Number of games to play in headless mode
+- `--no-clear`: Keep all output in the terminal
+- `--request-timeout`: HTTP timeout in seconds
+- `--seed`: Random seed for fallback move selection
+
+## Notes
+
+- The CLI prints the board, recent moves, and the last raw model reply.
+- If a model returns an illegal move, the runner falls back to the first legal move.

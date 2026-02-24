@@ -1,0 +1,6 @@
+python-chess>=1.999
+openai>=1.40.0
+stockfish>=3.28.0
+flask>=3.0.0
+cairosvg>=2.7.0
+pillow>=10.3.0

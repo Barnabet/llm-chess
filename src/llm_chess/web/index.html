@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLM Chess Arena</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div class="hero__copy">
+          <div class="pill">LLM Chess Studio</div>
+          <h1>Play the models. Watch the models. Score every move.</h1>
+          <p>
+            Choose an LLM to spar against or queue up a head-to-head match. The boards track
+            accuracy per move, update Elo, and archive every game in your leaderboard.
+          </p>
+          <div class="hero__actions">
+            <a class="ghost" href="#leaderboard">View leaderboard</a>
+            <a class="ghost" href="/pieces">Piece styles</a>
+            <span class="hint">Live updates: `.llm_chess/leaderboard.json`</span>
+          </div>
+        </div>
+        <div class="hero__stat">
+          <div class="stat-card">
+            <span class="stat-label">System</span>
+            <span class="stat-value" id="model-count">Loading models...</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Sessions</span>
+            <span class="stat-value" id="session-count">0 active games</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="arenas">
+        <section class="arena" data-arena="human">
+          <div class="arena__header">
+            <div>
+              <h2>Challenge an LLM</h2>
+              <p>Pick your opponent and take the next move.</p>
+            </div>
+            <div class="arena__controls">
+              <label>
+                Opponent
+                <select data-model-select></select>
+              </label>
+              <label>
+                Your color
+                <div class="toggle" role="group" aria-label="Select your color">
+                  <button data-color="white" class="active">White</button>
+                  <button data-color="black">Black</button>
+                </div>
+              </label>
+              <button class="primary" data-start>Launch fullscreen match</button>
+            </div>
+          </div>
+          <div class="overlay" data-overlay>
+            <div class="overlay__panel">
+              <header class="overlay__header">
+                <div>
+                  <div class="overlay__label">Challenge an LLM</div>
+                  <div class="status" data-status>Waiting for a new match.</div>
+                </div>
+                <div class="overlay__actions">
+                  <span class="badge" data-accuracy>Accuracy n/a</span>
+                  <button class="ghost" data-exit type="button">Exit</button>
+                </div>
+              </header>
+              <div class="overlay__body">
+                <aside class="eval-panel">
+                  <div class="eval-label">Stockfish eval</div>
+                  <div class="eval-bar">
+                    <div class="eval-fill" data-eval-fill></div>
+                    <div class="eval-mid"></div>
+                  </div>
+                  <div class="eval-value" data-eval-text>Eval n/a</div>
+                </aside>
+                <div class="board-shell">
+                  <div class="player-slot player-slot--black">
+                    <div class="player-card player-card--black" data-player-card="black">
+                      <div class="player-meta">
+                        <span class="player-color">Black</span>
+                        <span class="player-elo" data-player-elo>elo n/a</span>
+                      </div>
+                      <div class="player-name" data-player-name>Black</div>
+                    </div>
+                  </div>
+                  <div class="captured-row captured-row--black" data-captured="black"></div>
+                  <div class="board-frame" data-orientation="white">
+                    <div class="board-ranks">
+                      <span>8</span>
+                      <span>7</span>
+                      <span>6</span>
+                      <span>5</span>
+                      <span>4</span>
+                      <span>3</span>
+                      <span>2</span>
+                      <span>1</span>
+                    </div>
+                    <div class="board" data-board></div>
+                    <div class="board-notice" data-board-notice hidden>
+                      <div class="board-notice__title" data-board-notice-title></div>
+                      <div class="board-notice__text" data-board-notice-text></div>
+                      <div class="board-notice__status" data-board-notice-status></div>
+                    </div>
+                    <div class="board-files">
+                      <span>a</span>
+                      <span>b</span>
+                      <span>c</span>
+                      <span>d</span>
+                      <span>e</span>
+                      <span>f</span>
+                      <span>g</span>
+                      <span>h</span>
+                    </div>
+                  </div>
+                  <div class="captured-row captured-row--white" data-captured="white"></div>
+                  <div class="player-slot player-slot--white">
+                    <div class="player-card player-card--white" data-player-card="white">
+                      <div class="player-meta">
+                        <span class="player-color">White</span>
+                        <span class="player-elo" data-player-elo>elo n/a</span>
+                      </div>
+                      <div class="player-name" data-player-name>White</div>
+                    </div>
+                  </div>
+                </div>
+                <aside class="banter-panel">
+                  <div class="player-message player-message--black" data-player-banter="black">
+                    <span class="player-message__label">Black says</span>
+                    <span class="player-message__text">No heckles yet.</span>
+                  </div>
+                  <div class="player-message" data-player-banter="white">
+                    <span class="player-message__label">White says</span>
+                    <span class="player-message__text">No heckles yet.</span>
+                  </div>
+                </aside>
+                <aside class="move-panel">
+                  <div class="move-panel__header">
+                    <span>Move list</span>
+                    <span class="move-panel__hint">Accuracy</span>
+                  </div>
+                  <div class="move-list" data-moves></div>
+                </aside>
+              </div>
+              <div class="overlay__footer">
+                <span class="note" data-error></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="arena" data-arena="watch">
+          <div class="arena__header">
+            <div>
+              <h2>Watch LLM vs LLM</h2>
+              <p>Run a full-speed duel and analyze each decision.</p>
+            </div>
+            <div class="arena__controls">
+              <label>
+                White model
+                <select data-white-select></select>
+              </label>
+              <label>
+                Black model
+                <select data-black-select></select>
+              </label>
+              <label>
+                Opening
+                <select data-opening-select>
+                  <option value="none">Standard start</option>
+                  <option value="random">Random opening</option>
+                </select>
+              </label>
+              <button class="primary" data-start>Launch fullscreen match</button>
+            </div>
+          </div>
+          <div class="overlay" data-overlay>
+            <div class="overlay__panel">
+              <header class="overlay__header">
+                <div>
+                  <div class="overlay__label">LLM vs LLM</div>
+                  <div class="status" data-status>Waiting for a new match.</div>
+                </div>
+                <div class="overlay__actions">
+                  <span class="badge" data-accuracy>Accuracy n/a</span>
+                  <button class="ghost" data-exit type="button">Exit</button>
+                </div>
+              </header>
+              <div class="overlay__body">
+                <aside class="eval-panel">
+                  <div class="eval-label">Stockfish eval</div>
+                  <div class="eval-bar">
+                    <div class="eval-fill" data-eval-fill></div>
+                    <div class="eval-mid"></div>
+                  </div>
+                  <div class="eval-value" data-eval-text>Eval n/a</div>
+                </aside>
+                <div class="board-shell">
+                  <div class="player-slot player-slot--black">
+                    <div class="player-card player-card--black" data-player-card="black">
+                      <div class="player-meta">
+                        <span class="player-color">Black</span>
+                        <span class="player-elo" data-player-elo>elo n/a</span>
+                      </div>
+                      <div class="player-name" data-player-name>Black</div>
+                    </div>
+                  </div>
+                  <div class="captured-row captured-row--black" data-captured="black"></div>
+                  <div class="board-frame" data-orientation="white">
+                    <div class="board-ranks">
+                      <span>8</span>
+                      <span>7</span>
+                      <span>6</span>
+                      <span>5</span>
+                      <span>4</span>
+                      <span>3</span>
+                      <span>2</span>
+                      <span>1</span>
+                    </div>
+                    <div class="board" data-board></div>
+                    <div class="board-notice" data-board-notice hidden>
+                      <div class="board-notice__title" data-board-notice-title></div>
+                      <div class="board-notice__text" data-board-notice-text></div>
+                      <div class="board-notice__status" data-board-notice-status></div>
+                    </div>
+                    <div class="board-files">
+                      <span>a</span>
+                      <span>b</span>
+                      <span>c</span>
+                      <span>d</span>
+                      <span>e</span>
+                      <span>f</span>
+                      <span>g</span>
+                      <span>h</span>
+                    </div>
+                  </div>
+                  <div class="captured-row captured-row--white" data-captured="white"></div>
+                  <div class="player-slot player-slot--white">
+                    <div class="player-card player-card--white" data-player-card="white">
+                      <div class="player-meta">
+                        <span class="player-color">White</span>
+                        <span class="player-elo" data-player-elo>elo n/a</span>
+                      </div>
+                      <div class="player-name" data-player-name>White</div>
+                    </div>
+                  </div>
+                </div>
+                <aside class="banter-panel">
+                  <div class="player-message player-message--black" data-player-banter="black">
+                    <span class="player-message__label">Black says</span>
+                    <span class="player-message__text">No heckles yet.</span>
+                  </div>
+                  <div class="player-message" data-player-banter="white">
+                    <span class="player-message__label">White says</span>
+                    <span class="player-message__text">No heckles yet.</span>
+                  </div>
+                </aside>
+                <aside class="move-panel">
+                  <div class="move-panel__header">
+                    <span>Move list</span>
+                    <span class="move-panel__hint">Accuracy</span>
+                  </div>
+                  <div class="move-list" data-moves></div>
+                </aside>
+              </div>
+              <div class="overlay__footer">
+                <span class="note" data-error></span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <section class="leaderboard-section" id="leaderboard" data-leaderboard>
+        <header class="leaderboard-header">
+          <div>
+            <div class="pill">Leaderboard</div>
+            <h2>Model standings, cost, accuracy, and speed at a glance.</h2>
+            <p>Sort by Elo, cost, accuracy, or time to see who's strong, efficient, or fast.</p>
+          </div>
+          <div class="leaderboard-meta" data-leaderboard-meta>Loading leaderboard...</div>
+        </header>
+
+        <div class="leaderboard-table-card">
+          <div class="leaderboard-table-head">
+            <span>Ranked models</span>
+            <span class="leaderboard-hint">Click Elo, Cost, Accuracy, or Time to sort</span>
+          </div>
+          <div class="leaderboard-table-scroll">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Model</th>
+                  <th><button class="sort-btn" data-sort="elo">Elo</button></th>
+                  <th><button class="sort-btn" data-sort="cost">Cost</button></th>
+                  <th><button class="sort-btn" data-sort="time">Avg Time</button></th>
+                  <th><button class="sort-btn" data-sort="accuracy">Accuracy</button></th>
+                  <th>Games</th>
+                  <th>W/L/D</th>
+                </tr>
+              </thead>
+              <tbody data-leaderboard-body></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="chart-title">Cost vs Elo</div>
+            <div class="chart-legend">Dot color = model</div>
+            <svg data-chart="cost-elo" role="img" aria-label="Scatter plot of cost versus Elo"></svg>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Cost vs Accuracy</div>
+            <div class="chart-legend">Dot color = model</div>
+            <svg data-chart="cost-accuracy" role="img" aria-label="Scatter plot of cost versus accuracy"></svg>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Time vs Elo</div>
+            <div class="chart-legend">Dot color = model</div>
+            <svg data-chart="time-elo" role="img" aria-label="Scatter plot of time versus Elo"></svg>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Accuracy vs Elo</div>
+            <div class="chart-legend">Dot color = model</div>
+            <svg data-chart="accuracy-elo" role="img" aria-label="Scatter plot of accuracy versus Elo"></svg>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Time vs Accuracy</div>
+            <div class="chart-legend">Dot color = model</div>
+            <svg data-chart="time-accuracy" role="img" aria-label="Scatter plot of time versus accuracy"></svg>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

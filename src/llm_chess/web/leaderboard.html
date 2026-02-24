@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLM Chess Leaderboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg-0: #0b0f14;
+        --bg-1: #0f1722;
+        --bg-2: #131d2a;
+        --panel: #141c27;
+        --panel-2: #182434;
+        --line: rgba(255, 255, 255, 0.08);
+        --text: #e6edf6;
+        --muted: #9bb0c6;
+        --accent: #7dd3fc;
+        --accent-2: #fbbf24;
+        --shadow: rgba(0, 0, 0, 0.4);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", "Satoshi", "Segoe UI", sans-serif;
+        color: var(--text);
+        background: radial-gradient(1200px 600px at 10% -10%, #0d1b2a 0%, transparent 60%),
+          radial-gradient(900px 500px at 100% 0%, #1c2d43 0%, transparent 55%),
+          linear-gradient(180deg, var(--bg-0), var(--bg-1) 40%, var(--bg-2));
+        min-height: 100vh;
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 56px 24px 72px;
+      }
+
+      header {
+        display: grid;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 32px;
+      }
+
+      .title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 12px;
+      }
+
+      h1 {
+        font-size: clamp(32px, 4vw, 48px);
+        margin: 0;
+        letter-spacing: -0.02em;
+      }
+
+      .tag {
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+      }
+
+      .subtitle {
+        max-width: 700px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .panel {
+        background: linear-gradient(180deg, rgba(20, 28, 39, 0.9), rgba(20, 28, 39, 0.6));
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: 0 20px 60px var(--shadow);
+        overflow: hidden;
+      }
+
+      .chart {
+        padding: 18px 22px 8px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .chart-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted);
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        margin-bottom: 12px;
+      }
+
+      .chart-wrap {
+        background: rgba(10, 14, 20, 0.5);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+      }
+
+      .chart svg {
+        width: 100%;
+        height: 260px;
+        display: block;
+      }
+
+      .axis-label {
+        fill: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+      }
+
+      .axis-line {
+        stroke: rgba(255, 255, 255, 0.1);
+        stroke-width: 1;
+      }
+
+      .grid-line {
+        stroke: rgba(255, 255, 255, 0.06);
+        stroke-width: 1;
+        stroke-dasharray: 4 6;
+      }
+
+      .point {
+        fill: var(--accent);
+        stroke: rgba(0, 0, 0, 0.4);
+        stroke-width: 1;
+      }
+
+      .point-label {
+        fill: var(--text);
+        font-size: 11px;
+      }
+
+      .panel-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(9, 12, 17, 0.35);
+      }
+
+      .stats {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .stats span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dot {
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: 0 0 8px var(--accent);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      thead {
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        background: rgba(12, 17, 24, 0.6);
+      }
+
+      th,
+      td {
+        padding: 14px 20px;
+        text-align: left;
+      }
+
+      tbody tr {
+        border-top: 1px solid var(--line);
+        transition: background 0.2s ease;
+        animation: rise 0.4s ease forwards;
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      tbody tr:hover {
+        background: rgba(125, 211, 252, 0.06);
+      }
+
+      .rank {
+        font-weight: 600;
+        color: var(--accent-2);
+      }
+
+      .model {
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(125, 211, 252, 0.3);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .empty {
+        padding: 32px 20px;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      .footer {
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 12px;
+        text-align: right;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 720px) {
+        th:nth-child(4),
+        td:nth-child(4),
+        th:nth-child(5),
+        td:nth-child(5),
+        th:nth-child(7),
+        td:nth-child(7) {
+          display: none;
+        }
+
+        th,
+        td {
+          padding: 12px 14px;
+        }
+
+        .chart svg {
+          height: 220px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="title">
+          <h1>LLM Chess Leaderboard</h1>
+          <span class="tag">Live Ratings</span>
+        </div>
+        <p class="subtitle">
+          Elo ratings updated from every headless match. Rankings reflect the current
+          strength distribution across your model pool.
+        </p>
+      </header>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div class="pill">Current Standings</div>
+          <div class="stats">
+            <span><span class="dot"></span><span id="model-count">0 models</span></span>
+            <span><span class="dot"></span><span id="game-count">0 games</span></span>
+            <span><span class="dot"></span><span id="updated">Updated just now</span></span>
+          </div>
+        </div>
+        <div class="chart">
+          <div class="chart-title">Cost vs Elo</div>
+          <div class="chart-wrap">
+            <svg id="elo-chart" viewBox="0 0 720 260" role="img" aria-label="Cost vs Elo scatter plot"></svg>
+          </div>
+        </div>
+        <div id="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Model</th>
+                <th>Elo</th>
+                <th>Accuracy</th>
+                <th>Record</th>
+                <th>Games</th>
+                <th>Avg Cost/Move</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard"></tbody>
+          </table>
+        </div>
+      </section>
+      <div class="footer">Source: .llm_chess/leaderboard.json</div>
+    </div>
+
+    <script>
+      const tableBody = document.getElementById("leaderboard");
+      const modelCount = document.getElementById("model-count");
+      const gameCount = document.getElementById("game-count");
+      const updated = document.getElementById("updated");
+      const tableWrap = document.getElementById("table-wrap");
+
+      const formatNumber = (value) =>
+        new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value);
+
+      const renderEmpty = (message) => {
+        tableWrap.innerHTML = `<div class="empty">${message}</div>`;
+      };
+
+      const renderRows = (rows) => {
+        tableBody.innerHTML = "";
+        rows.forEach((row, index) => {
+          const tr = document.createElement("tr");
+          tr.style.animationDelay = `${index * 0.04}s`;
+          tr.innerHTML = `
+            <td class="rank">${index + 1}</td>
+            <td class="model">${row.model}</td>
+            <td>${formatNumber(row.elo)}</td>
+            <td class="muted">${row.accuracyGames ? `${formatNumber(row.accuracyAvg)}%` : "n/a"}</td>
+            <td class="muted">${row.wins}-${row.draws}-${row.losses}</td>
+            <td class="muted">${row.games}</td>
+            <td class="muted">${row.costGames ? `$${row.costAvg.toFixed(6)}` : "n/a"}</td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      };
+
+      const renderChart = (rows) => {
+        const svg = document.getElementById("elo-chart");
+        if (!svg) {
+          return;
+        }
+        const width = 720;
+        const height = 260;
+        const padding = { top: 20, right: 24, bottom: 36, left: 48 };
+        const plotWidth = width - padding.left - padding.right;
+        const plotHeight = height - padding.top - padding.bottom;
+
+        const points = rows.filter((row) => typeof row.costAvg === "number");
+        svg.innerHTML = "";
+        if (!points.length) {
+          svg.innerHTML = `<text x="50%" y="50%" text-anchor="middle" class="axis-label">No cost data yet</text>`;
+          return;
+        }
+
+        const minCost = Math.min(...points.map((row) => row.costAvg));
+        const maxCost = Math.max(...points.map((row) => row.costAvg));
+        const minElo = Math.min(...points.map((row) => row.elo));
+        const maxElo = Math.max(...points.map((row) => row.elo));
+        const costPad = (maxCost - minCost) * 0.1 || 0.00001;
+        const eloPad = (maxElo - minElo) * 0.1 || 5;
+
+        const costRange = [minCost - costPad, maxCost + costPad];
+        const eloRange = [minElo - eloPad, maxElo + eloPad];
+
+        const scaleX = (value) =>
+          padding.left + ((value - costRange[0]) / (costRange[1] - costRange[0])) * plotWidth;
+        const scaleY = (value) =>
+          padding.top + plotHeight - ((value - eloRange[0]) / (eloRange[1] - eloRange[0])) * plotHeight;
+
+        const gridLines = 4;
+        for (let i = 0; i <= gridLines; i += 1) {
+          const y = padding.top + (plotHeight * i) / gridLines;
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", padding.left);
+          line.setAttribute("x2", width - padding.right);
+          line.setAttribute("y1", y);
+          line.setAttribute("y2", y);
+          line.setAttribute("class", "grid-line");
+          svg.appendChild(line);
+        }
+
+        const axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        axis.setAttribute("x1", padding.left);
+        axis.setAttribute("x2", width - padding.right);
+        axis.setAttribute("y1", height - padding.bottom);
+        axis.setAttribute("y2", height - padding.bottom);
+        axis.setAttribute("class", "axis-line");
+        svg.appendChild(axis);
+
+        const axisY = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        axisY.setAttribute("x1", padding.left);
+        axisY.setAttribute("x2", padding.left);
+        axisY.setAttribute("y1", padding.top);
+        axisY.setAttribute("y2", height - padding.bottom);
+        axisY.setAttribute("class", "axis-line");
+        svg.appendChild(axisY);
+
+        const xLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        xLabel.setAttribute("x", width - padding.right);
+        xLabel.setAttribute("y", height - 10);
+        xLabel.setAttribute("text-anchor", "end");
+        xLabel.setAttribute("class", "axis-label");
+        xLabel.textContent = "Avg Cost / Move ($)";
+        svg.appendChild(xLabel);
+
+        const yLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        yLabel.setAttribute("x", padding.left);
+        yLabel.setAttribute("y", 14);
+        yLabel.setAttribute("text-anchor", "start");
+        yLabel.setAttribute("class", "axis-label");
+        yLabel.textContent = "Elo";
+        svg.appendChild(yLabel);
+
+        points.forEach((row) => {
+          const cx = scaleX(row.costAvg);
+          const cy = scaleY(row.elo);
+          const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          circle.setAttribute("cx", cx);
+          circle.setAttribute("cy", cy);
+          circle.setAttribute("r", 5);
+          circle.setAttribute("class", "point");
+          svg.appendChild(circle);
+
+          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          label.setAttribute("x", cx + 8);
+          label.setAttribute("y", cy - 6);
+          label.setAttribute("class", "point-label");
+          label.textContent = row.model.split("/").slice(-1)[0];
+          svg.appendChild(label);
+        });
+      };
+
+      const loadLeaderboard = async () => {
+        try {
+          const endpoint =
+            window.location.protocol === "file:"
+              ? ".llm_chess/leaderboard.json"
+              : "/api/leaderboard";
+          const response = await fetch(endpoint, { cache: "no-store" });
+          if (!response.ok) {
+            renderEmpty("Leaderboard not found. Run some games first.");
+            return;
+          }
+          const data = await response.json();
+          const players = data.players || {};
+          const entries = Object.entries(players).map(([model, stats]) => ({
+            model,
+            elo: stats.elo || 1200,
+            wins: stats.wins || 0,
+            draws: stats.draws || 0,
+            losses: stats.losses || 0,
+            games: stats.games || 0,
+            costAvg: typeof stats.cost_avg === "number" ? stats.cost_avg : null,
+            costGames: typeof stats.cost_games === "number" ? stats.cost_games : 0,
+            accuracyAvg: typeof stats.accuracy_avg === "number" ? stats.accuracy_avg : null,
+            accuracyGames: typeof stats.accuracy_games === "number" ? stats.accuracy_games : 0,
+          }));
+
+          if (!entries.length) {
+            renderEmpty("No games recorded yet.");
+            return;
+          }
+
+          entries.sort((a, b) => b.elo - a.elo);
+          const totalGames = entries.reduce((sum, entry) => sum + entry.games, 0) / 2;
+          renderRows(entries);
+          renderChart(entries);
+
+          modelCount.textContent = `${entries.length} models`;
+          gameCount.textContent = `${Math.round(totalGames)} games`;
+          updated.textContent = new Date().toLocaleString();
+        } catch (error) {
+          renderEmpty("Unable to load leaderboard data.");
+        }
+      };
+
+      loadLeaderboard();
+    </script>
+  </body>
+</html>

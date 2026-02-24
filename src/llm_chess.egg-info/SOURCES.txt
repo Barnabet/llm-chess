@@ -1,0 +1,11 @@
+README.md
+pyproject.toml
+src/llm_chess/__init__.py
+src/llm_chess/__main__.py
+src/llm_chess/cli.py
+src/llm_chess.egg-info/PKG-INFO
+src/llm_chess.egg-info/SOURCES.txt
+src/llm_chess.egg-info/dependency_links.txt
+src/llm_chess.egg-info/entry_points.txt
+src/llm_chess.egg-info/requires.txt
+src/llm_chess.egg-info/top_level.txt
