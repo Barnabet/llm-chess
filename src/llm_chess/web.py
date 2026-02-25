@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import random
 import time
@@ -52,6 +53,9 @@ NON_TRACKED_MODELS = {HUMAN_MODEL_ID, OPENING_MODEL_ID}
 STOCKFISH_ELO_LEVELS = [1350, 1500, 1750, 2000, 2250, 2500, 2750, 3000]
 STOCKFISH_MODELS = {f"stockfish/elo-{elo}": elo for elo in STOCKFISH_ELO_LEVELS}
 STOCKFISH_MODEL_IDS = set(STOCKFISH_MODELS.keys())
+
+# Transformer eval player
+TRANSFORMER_MODEL_ID = "transformer/eval-v1"
 
 OPENING_LIBRARY = [
     {"name": "Sicilian Defense", "white": "e4", "black": "c5"},
@@ -227,10 +231,12 @@ def should_track_model(model_id: str) -> bool:
 
 
 def should_track_cost_time(model_id: str) -> bool:
-    """Return True if model should track cost and time metrics (excludes Stockfish)."""
+    """Return True if model should track cost and time metrics (excludes engines)."""
     if model_id in NON_TRACKED_MODELS:
         return False
     if model_id in STOCKFISH_MODEL_IDS:
+        return False
+    if model_id == TRANSFORMER_MODEL_ID:
         return False
     return True
 
@@ -463,6 +469,33 @@ def perform_stockfish_move(
         time.sleep(game.delay)
 
 
+def perform_transformer_move(
+    game: GameState,
+    player: GamePlayer,
+) -> None:
+    """Generate a move using the Transformer eval model with 1-ply minimax."""
+    from llm_chess.chess_transformer.player import get_player
+
+    with game.lock:
+        if game.finished or game.error:
+            return
+        if game.board.turn != player.color:
+            return
+
+        try:
+            tf_player = get_player()
+            move = tf_player.pick_move(game.board)
+        except Exception as exc:
+            logging.getLogger(__name__).warning("Transformer move failed: %s", exc)
+            move = next(iter(game.board.legal_moves))
+
+        record_move(game, move, player.model, None, False, None)
+        maybe_finalize_game(game)
+
+    if game.delay:
+        time.sleep(game.delay)
+
+
 def perform_llm_move(
     game: GameState,
     player: GamePlayer,
@@ -638,12 +671,12 @@ def run_game_loop(game_id: str, client: Optional[OpenRouterChessClient], timeout
             active = player_for_turn(game)
             if game.draw_offer and game.draw_offer.get("status") == "pending":
                 offerer = game.draw_offer.get("by")
-                # Handle draw offers for stockfish (auto-decline)
-                if active.kind == "stockfish":
+                # Handle draw offers for engine players (auto-decline)
+                if active.kind in ("stockfish", "transformer"):
                     game.draw_offer["status"] = "declined"
                     game.draw_offer["response_by"] = side_name(active.color)
-                    game.draw_offer["response"] = "Stockfish declines draw offers."
-                    game.last_tool = {"name": "decline_draw", "by": side_name(active.color), "message": "Stockfish declines."}
+                    game.draw_offer["response"] = f"{active.kind.title()} declines draw offers."
+                    game.last_tool = {"name": "decline_draw", "by": side_name(active.color), "message": f"{active.kind.title()} declines."}
                     publish_game(game)
                     continue
                 if offerer == side_name(game.board.turn):
@@ -660,6 +693,8 @@ def run_game_loop(game_id: str, client: Optional[OpenRouterChessClient], timeout
         if active.kind == "stockfish":
             target_elo = STOCKFISH_MODELS.get(active.model, 1500)
             perform_stockfish_move(game, active, target_elo)
+        elif active.kind == "transformer":
+            perform_transformer_move(game, active)
         elif active.kind == "llm":
             perform_llm_move(game, active, client, timeout)
 
@@ -797,6 +832,8 @@ def get_player_spec(
     """
     if model_id in STOCKFISH_MODEL_IDS:
         return model_id, 0.0, None, "stockfish"
+    if model_id == TRANSFORMER_MODEL_ID:
+        return model_id, 0.0, None, "transformer"
     spec = catalog.get(model_id)
     if not spec:
         return None
@@ -869,6 +906,14 @@ def create_app() -> Flask:
                 "kind": "stockfish",
                 "starting_elo": elo,
             })
+
+        # Add Transformer eval player
+        models_list.append({
+            "model": TRANSFORMER_MODEL_ID,
+            "temperature": 0.0,
+            "reasoning": None,
+            "kind": "transformer",
+        })
 
         return jsonify({"models": models_list})
 

@@ -15,11 +15,14 @@ dependencies = [
   "flask>=3.0.0",
   "cairosvg>=2.7.0",
   "pillow>=10.3.0",
+  "torch>=2.0.0",
 ]
 
 [project.scripts]
 llm-chess = "llm_chess.cli:main"
 llm-chess-web = "llm_chess.web:main"
+llm-chess-train = "llm_chess.chess_transformer.train:main"
+llm-chess-generate = "llm_chess.chess_transformer.generate_games:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
